@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "auto",
             "console": "integratedTerminal",
-            "program": "src/week2/findian/findian.go"
+            "program": "src/week3/slice.go"
         }
     ]
 }
