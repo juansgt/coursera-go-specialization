@@ -38,6 +38,8 @@ func main() {
 	var animal *Animal
 
 	requestedAnimal = "0"
+	fmt.Println("Please insert following command: <animal> <information> Ex: cow move")
+
 questionLoop:
 	for {
 		fmt.Print("> ")
