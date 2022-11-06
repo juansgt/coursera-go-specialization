@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "auto",
             "console": "integratedTerminal",
-            "program": "src/week3/slice.go"
+            "program": "src/ConcurrencyInGo/week3/sort.go"
         }
     ]
 }
