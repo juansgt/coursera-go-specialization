@@ -20,15 +20,23 @@ func swap(slice []int, i int) {
 }
 
 type ISortAsync interface {
-	Sort(waitGroup *sync.WaitGroup, slice []int)
+	SortAsync(waitGroup *sync.WaitGroup, slice []int)
 }
 
-type BubbleSortAsync struct{}
+type ISort interface {
+	Sort(slice []int)
+}
 
-func (bubbleSortAsync *BubbleSortAsync) Sort(waitGroup *sync.WaitGroup, slice []int) {
+type BubbleSort struct{}
+
+func (BubbleSort *BubbleSort) SortAsync(waitGroup *sync.WaitGroup, slice []int) {
 	bubbleSort(slice)
 
 	waitGroup.Done()
+}
+
+func (BubbleSort *BubbleSort) Sort(slice []int) {
+	bubbleSort(slice)
 }
 
 func main() {
@@ -39,7 +47,9 @@ func main() {
 	var numbers3 []int
 	var numbers4 []int
 	var waitGroup sync.WaitGroup
-	var sort ISortAsync = new(BubbleSortAsync)
+	var bubbleSort = new(BubbleSort)
+	var sort ISort = bubbleSort
+	var sortAsync ISortAsync = bubbleSort
 
 	waitGroup.Add(4)
 	numbers = make([]int, 0, 12)
@@ -65,13 +75,13 @@ func main() {
 	fmt.Print("Subarray to be sorted in goroutine 4: ")
 	fmt.Println(numbers4)
 
-	go sort.Sort(&waitGroup, numbers1)
-	go sort.Sort(&waitGroup, numbers2)
-	go sort.Sort(&waitGroup, numbers3)
-	go sort.Sort(&waitGroup, numbers4)
+	go sortAsync.SortAsync(&waitGroup, numbers1)
+	go sortAsync.SortAsync(&waitGroup, numbers2)
+	go sortAsync.SortAsync(&waitGroup, numbers3)
+	go sortAsync.SortAsync(&waitGroup, numbers4)
 
 	waitGroup.Wait()
 
-	bubbleSort(numbers)
+	sort.Sort(numbers)
 	fmt.Println(numbers)
 }
