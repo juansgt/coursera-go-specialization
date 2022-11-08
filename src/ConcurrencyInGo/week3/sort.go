@@ -19,24 +19,49 @@ func swap(slice []int, i int) {
 	slice[i], slice[i+1] = slice[i+1], slice[i]
 }
 
+func mergeSlices(a []int, b []int) []int {
+	final := []int{}
+	i := 0
+	j := 0
+	for i < len(a) && j < len(b) {
+		if a[i] < b[j] {
+			final = append(final, a[i])
+			i++
+		} else {
+			final = append(final, b[j])
+			j++
+		}
+	}
+	for ; i < len(a); i++ {
+		final = append(final, a[i])
+	}
+	for ; j < len(b); j++ {
+		final = append(final, b[j])
+	}
+	return final
+}
+
 type ISortAsync interface {
 	SortAsync(waitGroup *sync.WaitGroup, slice []int)
 }
 
-type ISort interface {
-	Sort(slice []int)
+type IMerge interface {
+	Merge(slice1 []int, slice2 []int) []int
 }
 
 type BubbleSort struct{}
 
 func (BubbleSort *BubbleSort) SortAsync(waitGroup *sync.WaitGroup, slice []int) {
 	bubbleSort(slice)
+	fmt.Println("Subarray sorted in goroutine: ", slice)
 
 	waitGroup.Done()
 }
 
-func (BubbleSort *BubbleSort) Sort(slice []int) {
-	bubbleSort(slice)
+type Merge struct{}
+
+func (Merge *Merge) Merge(slice1 []int, slice2 []int) []int {
+	return mergeSlices(slice1, slice2)
 }
 
 func main() {
@@ -48,7 +73,7 @@ func main() {
 	var numbers4 []int
 	var waitGroup sync.WaitGroup
 	var bubbleSort = new(BubbleSort)
-	var sort ISort = bubbleSort
+	var merge IMerge = new(Merge)
 	var sortAsync ISortAsync = bubbleSort
 
 	waitGroup.Add(4)
@@ -66,15 +91,6 @@ func main() {
 	numbers3 = numbers[6:9]
 	numbers4 = numbers[9:]
 
-	fmt.Print("Subarray to be sorted in goroutine 1: ")
-	fmt.Println(numbers1)
-	fmt.Print("Subarray to be sorted in goroutine 2: ")
-	fmt.Println(numbers2)
-	fmt.Print("Subarray to be sorted in goroutine 3: ")
-	fmt.Println(numbers3)
-	fmt.Print("Subarray to be sorted in goroutine 4: ")
-	fmt.Println(numbers4)
-
 	go sortAsync.SortAsync(&waitGroup, numbers1)
 	go sortAsync.SortAsync(&waitGroup, numbers2)
 	go sortAsync.SortAsync(&waitGroup, numbers3)
@@ -82,6 +98,6 @@ func main() {
 
 	waitGroup.Wait()
 
-	sort.Sort(numbers)
+	numbers = merge.Merge(merge.Merge(numbers1, numbers2), merge.Merge(numbers3, numbers4))
 	fmt.Println(numbers)
 }
