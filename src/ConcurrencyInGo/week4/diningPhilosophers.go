@@ -47,13 +47,12 @@ func (p *Philo) dropChopSticks() {
 
 func (p *Philo) eat() {
 	for i := 0; i < 3; i++ {
-		p.host.askPermissionToEat()
-
 		p.pickUpChopSticks()
+		p.host.askPermissionToEat()
 		fmt.Println("starting to eat ", p.philoNumber)
-		p.dropChopSticks()
 
 		p.host.stopEating()
+		p.dropChopSticks()
 		fmt.Println("finishing eating ", p.philoNumber)
 	}
 }
