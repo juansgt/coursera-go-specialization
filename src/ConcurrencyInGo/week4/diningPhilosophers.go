@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"sync"
 )
 
@@ -10,51 +11,57 @@ type ChopS struct {
 }
 
 type Philo struct {
-	leftCS  *ChopS
-	rightCS *ChopS
-	host    *Host
+	leftCS      *ChopS
+	rightCS     *ChopS
+	philoNumber int
+	host        *Host
 }
 
 type Host struct {
-	mu    sync.Mutex
-	count int
+	channel chan struct{}
 }
 
 func (host *Host) askPermissionToEat() {
-	host.mu.Lock()
-	if host.count < 2 {
-		host.count++
-		if host.count < 2 {
-			host.mu.Unlock()
-		}
-	}
+	host.channel <- struct{}{}
 }
 
 func (host *Host) stopEating() {
-	host.mu.Lock()
-	if host.count > 0 {
-		host.count--
-	}
-	host.mu.Unlock()
+	<-host.channel
 }
 
-func (p Philo) eat() {
-	for i := 0; i < 3; i++ {
+func (p *Philo) pickUpChopSticks() {
+	switch rand.Intn(2) {
+	case 0:
 		p.leftCS.Lock()
 		p.rightCS.Lock()
-
-		p.host.askPermissionToEat()
-		fmt.Println("eating")
-
-		p.rightCS.Unlock()
-		p.leftCS.Unlock()
-
-		p.host.stopEating()
+	case 1:
+		p.rightCS.Lock()
+		p.leftCS.Lock()
 	}
 }
 
-func philoEat(philos []*Philo, i int, waitGroup *sync.WaitGroup) {
-	philos[i].eat()
+func (p *Philo) dropChopSticks() {
+	p.rightCS.Unlock()
+	p.leftCS.Unlock()
+}
+
+func (p *Philo) eat() {
+	for i := 0; i < 3; i++ {
+		p.host.askPermissionToEat()
+
+		p.pickUpChopSticks()
+		fmt.Println("starting to eat ", p.philoNumber)
+		p.dropChopSticks()
+
+		p.host.stopEating()
+		fmt.Println("finishing eating ", p.philoNumber)
+	}
+}
+
+func philoEat(philo *Philo, waitGroup *sync.WaitGroup) {
+	philo.eat()
+
+	waitGroup.Done()
 }
 
 func main() {
@@ -62,6 +69,9 @@ func main() {
 	var philos []*Philo = make([]*Philo, 5)
 	var host *Host = new(Host)
 	var waitGroup sync.WaitGroup
+	waitGroup.Add(5)
+
+	host.channel = make(chan struct{}, 2)
 
 	for i := 0; i < 5; i++ {
 		cSticks[i] = new(ChopS)
@@ -71,12 +81,13 @@ func main() {
 		philos[i] = &Philo{
 			cSticks[i],
 			cSticks[(i+1)%5],
+			i + 1,
 			host,
 		}
 	}
 
 	for i := 0; i < 5; i++ {
-		go philoEat(philos, i, &waitGroup)
+		go philoEat(philos[i], &waitGroup)
 	}
 
 	waitGroup.Wait()
